@@ -5,7 +5,8 @@ const state = {
   teacherAssignments: [],
   studentAssignments: [],
   studentSubmissions: [],
-  currentTrackerData: []
+  currentTrackerData: [],
+  adminUsersData: []
 };
 
 const el = (id) => document.getElementById(id);
@@ -81,6 +82,7 @@ function showApp(user) {
   el("appView").classList.remove("hidden");
   el("profileSetupView").classList.add("hidden");
   setLandingVisibility(true);
+  localStorage.setItem("savedUser", JSON.stringify(user));
 
   const roleLabel = user.role === "teacher" ? "Guru" : user.role === "admin" ? "Admin" : "Murid";
   el("pName").value = user.name;
@@ -96,6 +98,15 @@ function showApp(user) {
   el("adminTab").classList.toggle("hidden", !isAdmin);
   el("adminBottomNavItem").classList.toggle("hidden", !isAdmin);
 
+  if (user.pictureUrl) {
+    el("navAvatar").src = user.pictureUrl;
+    el("navAvatar").classList.remove("hidden");
+    el("pAvatar").src = user.pictureUrl;
+  } else {
+    el("navAvatar").classList.add("hidden");
+    el("pAvatar").src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(user.name);
+  }
+
   switchView("dashboard");
   refreshRoleData();
 }
@@ -108,6 +119,7 @@ function showAuth() {
   state.studentSubmissions = [];
   el("appView").classList.add("hidden");
   setLandingVisibility(false);
+  localStorage.removeItem("savedUser");
 }
 
 function showProfileSetup(user) {
@@ -276,6 +288,8 @@ window.viewSubmission = (submissionId) => {
   
   if (sub.answerFileUrl) {
     el("subAnswerFile").innerHTML = `<a href="${sub.answerFileUrl}" target="_blank" class="btn btn-ghost btn-sm" style="width:100%">Buka Lampiran Siswa</a>`;
+  } else if (sub.answerLinkUrl) {
+    el("subAnswerFile").innerHTML = `<a href="${sub.answerLinkUrl}" target="_blank" class="btn btn-ghost btn-sm" style="width:100%">Buka Link Jawaban</a>`;
   } else {
     el("subAnswerFile").textContent = "Tidak ada lampiran.";
   }
@@ -306,25 +320,10 @@ async function loadStudentData() {
     el("sInstruction").textContent = "Pilih tugas dari timeline untuk melihat instruksi.";
     el("sAttachment").textContent = "Tidak ada lampiran.";
     el("sAnswer").value = "";
+    el("sAnswerLink").value = "";
   }
 
-  el("studentAssignmentsTable").innerHTML = `
-    <thead><tr><th>Tugas</th><th>Guru</th><th>Deadline</th><th>Status</th><th>Aksi</th></tr></thead>
-    <tbody>
-      ${assignments
-        .map((a) => {
-          const sub = subRows.find((s) => s.assignmentId === a.id);
-          const submissionId = sub?.submissionId ?? "null";
-          return `<tr>
-            <td>${a.title}</td>
-            <td>${a.teacherName}</td>
-            <td>${fmt(a.deadline)}</td>
-            <td>${statusPill(sub?.status || "draft", a.deadline, sub?.submittedAt)}</td>
-            <td><button class="btn-ghost" onclick="selectSubmission(${submissionId}, ${a.id})">Kerjakan</button></td>
-          </tr>`;
-        })
-        .join("")}
-    </tbody>`;
+  renderStudentAssignmentsTable();
 
   el("gradebookTable").innerHTML = `
     <thead><tr><th>Tugas</th><th>Status</th><th>Nilai</th><th>Feedback</th></tr></thead>
@@ -342,6 +341,40 @@ async function loadStudentData() {
     </tbody>`;
 }
 
+function renderStudentAssignmentsTable() {
+  const teacherFilter = el("studentSearchTeacher").value.toLowerCase();
+  const filtered = state.studentAssignments.filter(a => 
+    (a.teacherName || "").toLowerCase().includes(teacherFilter)
+  );
+
+  el("studentAssignmentsTable").innerHTML = `
+    <thead><tr><th>Tugas</th><th>Guru</th><th>Deadline</th><th>Status</th><th>Aksi</th></tr></thead>
+    <tbody>
+      ${filtered
+        .map((a) => {
+          const sub = state.studentSubmissions.find((s) => s.assignmentId === a.id);
+          const submissionId = sub?.submissionId ?? "null";
+          
+          const seenAssignments = JSON.parse(localStorage.getItem("seenAssignments") || "[]");
+          const isNew = !seenAssignments.includes(a.id);
+          const titleHtml = isNew ? `<span style="display:inline-block; width:8px; height:8px; background:#ff4757; border-radius:50%; margin-right:5px;"></span>${a.title}` : a.title;
+
+          return `<tr>
+            <td>${titleHtml}</td>
+            <td>${a.teacherName}</td>
+            <td>${fmt(a.deadline)}</td>
+            <td>${statusPill(sub?.status || "draft", a.deadline, sub?.submittedAt)}</td>
+            <td><button class="btn-ghost" onclick="selectSubmission(${submissionId}, ${a.id})">Kerjakan</button></td>
+          </tr>`;
+        })
+        .join("") || '<tr><td colspan="5" class="muted" style="text-align:center">Tugas tidak ditemukan</td></tr>'}
+    </tbody>`;
+
+  const seenAssignments = JSON.parse(localStorage.getItem("seenAssignments") || "[]");
+  const hasNew = state.studentAssignments.some(a => !seenAssignments.includes(a.id));
+  el("tugasBadge").classList.toggle("hidden", !hasNew);
+}
+
 window.selectSubmission = (submissionId, assignmentId) => {
   state.selectedSubmissionId = submissionId;
   const assignment = state.studentAssignments.find((a) => a.id === assignmentId);
@@ -349,12 +382,22 @@ window.selectSubmission = (submissionId, assignmentId) => {
 
   el("sTask").value = assignment?.title || "-";
   el("sAnswer").value = submission?.answerText || "";
+  el("sAnswerLink").value = submission?.answerLinkUrl || "";
   el("sInstruction").textContent = assignment?.description || "Tidak ada instruksi.";
 
   if (assignment?.attachmentUrl) {
-    el("sAttachment").innerHTML = `<a href="${assignment.attachmentUrl}" target="_blank" rel="noopener noreferrer">Buka Lampiran Tugas</a>`;
+    el("sAttachment").innerHTML = `<a href="${assignment.attachmentUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm">Buka Lampiran File</a>`;
+  } else if (assignment?.linkUrl) {
+    el("sAttachment").innerHTML = `<a href="${assignment.linkUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm">Buka Link Sumber</a>`;
   } else {
     el("sAttachment").textContent = "Tidak ada lampiran.";
+  }
+
+  const seenAssignments = JSON.parse(localStorage.getItem("seenAssignments") || "[]");
+  if (!seenAssignments.includes(assignmentId)) {
+    seenAssignments.push(assignmentId);
+    localStorage.setItem("seenAssignments", JSON.stringify(seenAssignments));
+    refreshRoleData();
   }
 };
 
@@ -374,6 +417,22 @@ async function refreshRoleData() {
 
 async function loadAdminData() {
   const users = await api("/users");
+  state.adminUsersData = users;
+  renderAdminUsersTable();
+}
+
+function renderAdminUsersTable() {
+  const query = el("adminSearchQuery").value.toLowerCase();
+  const role = el("adminSearchRole").value;
+  const classFilter = el("adminSearchClass").value.toLowerCase();
+
+  const filtered = state.adminUsersData.filter(u => {
+    const matchesQuery = (u.name || "").toLowerCase().includes(query) || (u.email || "").toLowerCase().includes(query);
+    const matchesRole = role === "" || u.role === role;
+    const matchesClass = (u.className || "").toLowerCase().includes(classFilter);
+    return matchesQuery && matchesRole && matchesClass;
+  });
+
   el("adminUsersTable").innerHTML = `
     <thead>
       <tr>
@@ -385,7 +444,7 @@ async function loadAdminData() {
       </tr>
     </thead>
     <tbody>
-      ${users
+      ${filtered
         .map(
           (u) => `
         <tr>
@@ -401,7 +460,7 @@ async function loadAdminData() {
           </td>
         </tr>`
         )
-        .join("")}
+        .join("") || '<tr><td colspan="5" class="muted" style="text-align:center">User tidak ditemukan</td></tr>'}
     </tbody>
   `;
 }
@@ -499,13 +558,17 @@ el("createAssignmentBtn").addEventListener("click", async () => {
         title: el("aTitle").value.trim(),
         description: el("aDescription").value.trim(),
         deadline: new Date(el("aDeadline").value).toISOString(),
-        attachmentUrl
+        attachmentUrl,
+        linkUrl: el("aLink").value.trim() || undefined,
+        targetClass: el("aTargetClass").value.trim() || undefined
       })
     });
     el("aTitle").value = "";
     el("aDescription").value = "";
+    el("aTargetClass").value = "";
     el("aDeadline").value = "";
     el("aFile").value = "";
+    el("aLink").value = "";
     await refreshRoleData();
     alert("Tugas berhasil dibuat.");
   } catch (e) {
@@ -520,9 +583,15 @@ async function saveSubmission(status) {
     await api(`/submissions/${state.selectedSubmissionId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status, answerText: el("sAnswer").value.trim(), answerFileUrl })
+      body: JSON.stringify({ 
+        status, 
+        answerText: el("sAnswer").value.trim(), 
+        answerFileUrl,
+        answerLinkUrl: el("sAnswerLink").value.trim() || undefined
+      })
     });
     el("sFile").value = "";
+    el("sAnswerLink").value = "";
     await refreshRoleData();
     alert(status === "draft" ? "Draft tersimpan." : "Jawaban terkirim.");
   } catch (e) {
@@ -572,5 +641,41 @@ el("startNowBtn").addEventListener("click", async () => {
 el("trackerSearchName").addEventListener("input", renderTrackerTable);
 el("trackerSearchClass").addEventListener("input", renderTrackerTable);
 
-showAuth();
+el("adminSearchQuery").addEventListener("input", renderAdminUsersTable);
+el("adminSearchRole").addEventListener("change", renderAdminUsersTable);
+el("adminSearchClass").addEventListener("input", renderAdminUsersTable);
+
+el("studentSearchTeacher").addEventListener("input", renderStudentAssignmentsTable);
+
+// PWA Install Logic
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  el("installContainer").classList.remove("hidden");
+});
+
+el("installAppBtn").addEventListener("click", async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === 'accepted') {
+    el("installContainer").classList.add("hidden");
+  }
+  deferredPrompt = null;
+});
+
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW failed:', err));
+  });
+}
+
+const savedUser = localStorage.getItem("savedUser");
+if (savedUser) {
+  showApp(JSON.parse(savedUser));
+} else {
+  showAuth();
+}
 initGoogleSignIn();

@@ -11,12 +11,15 @@ const createAssignmentSchema = z.object({
   title: z.string().min(3),
   description: z.string().min(3),
   deadline: z.string().datetime(),
-  attachmentUrl: z.string().optional()
+  attachmentUrl: z.string().optional(),
+  linkUrl: z.string().optional(),
+  targetClass: z.string().optional()
 });
 
 const submissionSchema = z.object({
   answerText: z.string().optional(),
   answerFileUrl: z.string().optional(),
+  answerLinkUrl: z.string().optional(),
   status: z.enum(["draft", "submitted"])
 });
 
@@ -153,6 +156,9 @@ api.post("/auth/google", async (c) => {
       if (existing[0].role !== expectedRole) {
         updates.role = expectedRole;
       }
+      if (payload.picture && existing[0].pictureUrl !== payload.picture) {
+        updates.pictureUrl = payload.picture;
+      }
 
       if (Object.keys(updates).length > 0) {
         const [updated] = await db
@@ -173,6 +179,7 @@ api.post("/auth/google", async (c) => {
         googleSub: payload.sub,
         role: expectedRole,
         profileCompleted: false,
+        pictureUrl: payload.picture,
         createdAt: new Date()
       })
       .returning();
@@ -297,6 +304,7 @@ api.get("/assignments", async (c) => {
         description: assignments.description,
         deadline: assignments.deadline,
         attachmentUrl: assignments.attachmentUrl,
+        linkUrl: assignments.linkUrl,
         createdAt: assignments.createdAt,
         totalStudents: sql<number>`count(distinct ${submissions.studentId})`,
         submittedCount: sql<number>`count(distinct case when ${submissions.status} = 'submitted' or ${submissions.status} = 'graded' then ${submissions.studentId} end)`
@@ -317,6 +325,7 @@ api.get("/assignments", async (c) => {
         description: assignments.description,
         deadline: assignments.deadline,
         attachmentUrl: assignments.attachmentUrl,
+        linkUrl: assignments.linkUrl,
         teacherName: users.name,
         submissionStatus: submissions.status,
         score: submissions.score
@@ -326,9 +335,20 @@ api.get("/assignments", async (c) => {
       .leftJoin(
         submissions,
         and(eq(submissions.assignmentId, assignments.id), eq(submissions.studentId, userId))
+      );
+
+    const student = await db.select({ className: users.className }).from(users).where(eq(users.id, userId)).limit(1);
+    const studentClass = student[0]?.className || "";
+
+    const filtered = await studentAssignments.where(
+      or(
+        isNull(assignments.targetClass),
+        eq(assignments.targetClass, ""),
+        eq(assignments.targetClass, studentClass)
       )
-      .orderBy(asc(assignments.deadline));
-    return c.json(studentAssignments);
+    ).orderBy(asc(assignments.deadline));
+
+    return c.json(filtered);
   }
 
   return c.json(await db.select().from(assignments).orderBy(desc(assignments.createdAt)));

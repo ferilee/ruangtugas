@@ -11,6 +11,7 @@ export const users = sqliteTable("users", {
   major: text("major"),
   className: text("class_name"),
   profileCompleted: integer("profile_completed", { mode: "boolean" }).notNull().default(false),
+  pictureUrl: text("picture_url"),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull()
 });
 
@@ -22,6 +23,8 @@ export const assignments = sqliteTable("assignments", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   attachmentUrl: text("attachment_url"),
+  linkUrl: text("link_url"),
+  targetClass: text("target_class"),
   deadline: integer("deadline", { mode: "timestamp_ms" }).notNull(),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull()
 });
@@ -36,6 +39,7 @@ export const submissions = sqliteTable("submissions", {
     .references(() => users.id),
   answerText: text("answer_text"),
   answerFileUrl: text("answer_file_url"),
+  answerLinkUrl: text("answer_link_url"),
   status: text("status", { enum: ["draft", "submitted", "graded"] })
     .notNull()
     .default("draft"),

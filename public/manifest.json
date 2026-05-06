@@ -1,0 +1,22 @@
+{
+  "name": "RuangTugas - Kelola Tugas Cerdas",
+  "short_name": "RuangTugas",
+  "description": "Platform manajemen tugas untuk Guru dan Murid.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b011d",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

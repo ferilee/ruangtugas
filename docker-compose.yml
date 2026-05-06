@@ -1,0 +1,15 @@
+services:
+  app:
+    image: ghcr.io/ferilee/ruangtugas:latest
+    container_name: ruangtugas-prod
+    restart: always
+    ports:
+      - "2003:2003"
+    environment:
+      - PORT=2003
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - DB_PATH=/app/data/sqlite.db
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads

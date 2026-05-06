@@ -15,6 +15,7 @@ export async function bootstrapDb() {
       major TEXT,
       class_name TEXT,
       profile_completed INTEGER NOT NULL DEFAULT 0,
+      picture_url TEXT,
       created_at INTEGER NOT NULL
     );
 
@@ -24,6 +25,8 @@ export async function bootstrapDb() {
       title TEXT NOT NULL,
       description TEXT NOT NULL,
       attachment_url TEXT,
+      link_url TEXT,
+      target_class TEXT,
       deadline INTEGER NOT NULL,
       created_at INTEGER NOT NULL,
       FOREIGN KEY(teacher_id) REFERENCES users(id)
@@ -35,6 +38,7 @@ export async function bootstrapDb() {
       student_id INTEGER NOT NULL,
       answer_text TEXT,
       answer_file_url TEXT,
+      answer_link_url TEXT,
       status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft','submitted','graded')),
       score INTEGER,
       feedback TEXT,
@@ -93,6 +97,22 @@ export async function bootstrapDb() {
     if (!hasClassName) sqlite.exec("ALTER TABLE users ADD COLUMN class_name TEXT");
     if (!hasProfileCompleted) {
       sqlite.exec("ALTER TABLE users ADD COLUMN profile_completed INTEGER NOT NULL DEFAULT 0");
+    }
+    if (!usersTableColumns.some(col => col.name === "picture_url")) {
+      sqlite.exec("ALTER TABLE users ADD COLUMN picture_url TEXT");
+    }
+
+    const assignmentsTableColumns = sqlite.query("PRAGMA table_info(assignments)").all() as Array<{ name: string }>;
+    if (!assignmentsTableColumns.some((col) => col.name === "link_url")) {
+      sqlite.exec("ALTER TABLE assignments ADD COLUMN link_url TEXT");
+    }
+    if (!assignmentsTableColumns.some((col) => col.name === "target_class")) {
+      sqlite.exec("ALTER TABLE assignments ADD COLUMN target_class TEXT");
+    }
+
+    const submissionsTableColumns = sqlite.query("PRAGMA table_info(submissions)").all() as Array<{ name: string }>;
+    if (!submissionsTableColumns.some((col) => col.name === "answer_link_url")) {
+      sqlite.exec("ALTER TABLE submissions ADD COLUMN answer_link_url TEXT");
     }
   }
 
