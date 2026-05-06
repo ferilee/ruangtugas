@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+.lucia/
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Databases
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Bun
+bun.lock
+
+# Build / IDE
+dist/
+.DS_Store
+.vscode/
+.idea/
+
+# Uploads
+uploads/

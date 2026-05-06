@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RuangTugas - Kelola Tugas dengan Cerdas</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <nav class="navbar">
+        <a href="/" class="logo">🚀 <span>RuangTugas</span></a>
+        <ul class="nav-links">
+
+        </ul>
+      </nav>
+
+      <section id="heroSection" class="hero">
+        <div class="hero-content">
+          <h1 class="hero-title">
+            <span class="accent-1">Kelola.</span>
+            <span class="accent-2">Pantau.</span>
+            <span class="accent-3">Sukses.</span>
+          </h1>
+          <p class="hero-desc">
+            Platform manajemen tugas untuk Guru dan Murid yang fokus pada alur kerja jelas dari distribusi
+            tugas sampai penilaian.
+          </p>
+          <div class="row" style="display: flex; gap: 15px;">
+            <button id="startNowBtn" class="btn btn-primary" type="button">Mulai Sekarang</button>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <img src="/ruangtugas_hero_cosmic_rocket.png" alt="RuangTugas" class="hero-image" />
+        </div>
+      </section>
+
+      <section id="authView" class="auth-panel hidden">
+        <div class="auth-banner">
+          <div>
+            <span class="auth-kicker">Akses kelas digital</span>
+            <h3>Akses RuangTugas</h3>
+            <p>Masuk dengan Google untuk membuka dashboard Guru atau Murid.</p>
+          </div>
+          <div class="auth-mark">RT</div>
+        </div>
+        <div class="auth-actions">
+          <div class="role-picker">
+            <label>Role untuk akun baru</label>
+            <select id="loginRole">
+              <option value="student">Murid</option>
+              <option value="teacher">Guru</option>
+            </select>
+          </div>
+          <div id="googleBtnWrap"></div>
+          <p id="googleStatus" class="muted">Menyiapkan login Google...</p>
+        </div>
+      </section>
+
+      <section id="appView" class="hidden">
+        <div class="app-tabs">
+          <button class="app-tab active" data-view="dashboard">Dashboard</button>
+          <button class="app-tab" data-view="tugas">Tugas</button>
+          <button class="app-tab" data-view="laporan">Laporan</button>
+          <button id="adminTab" class="app-tab hidden" data-view="admin">Admin</button>
+          <button class="app-tab" data-view="profil">Profil</button>
+        </div>
+
+        <div id="view-dashboard" class="app-page">
+          <div class="grid grid-3">
+            <div class="card">
+              <h3 id="stat1Label">Statistik 1</h3>
+              <p id="stat1Value" style="font-size: 28px; font-weight: 700;">0</p>
+            </div>
+            <div class="card">
+              <h3 id="stat2Label">Statistik 2</h3>
+              <p id="stat2Value" style="font-size: 28px; font-weight: 700;">0</p>
+            </div>
+            <div class="card">
+              <h3 id="stat3Label">Statistik 3</h3>
+              <p id="stat3Value" style="font-size: 28px; font-weight: 700;">0</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="view-tugas" class="app-page hidden">
+          <div id="teacherTugas" class="hidden">
+            <div class="card">
+              <h3>Buat Tugas Baru</h3>
+              <div class="grid grid-2">
+                <div class="form-group">
+                  <label>Judul Tugas</label>
+                  <input id="aTitle" placeholder="Contoh: Matematika Dasar" />
+                </div>
+                <div class="form-group">
+                  <label>Batas Waktu</label>
+                  <input id="aDeadline" type="datetime-local" />
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                  <label>Instruksi</label>
+                  <textarea id="aDescription" placeholder="Jelaskan instruksi tugas..."></textarea>
+                </div>
+                <div class="form-group">
+                  <label>Lampiran</label>
+                  <input id="aFile" type="file" />
+                </div>
+                <div style="display: flex; align-items: flex-end; padding-bottom: 20px;">
+                  <button id="createAssignmentBtn" class="btn btn-primary" style="width: 100%;">Publikasikan Tugas</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="studentTugas" class="hidden">
+            <div class="card" style="margin-bottom: 20px;">
+              <h3>Timeline Tugas</h3>
+              <div style="overflow-x: auto;">
+                <table id="studentAssignmentsTable"></table>
+              </div>
+            </div>
+            <div class="card">
+              <h3>Portal Pengumpulan</h3>
+              <div class="form-group">
+                <label>Tugas Dipilih</label>
+                <input id="sTask" disabled />
+              </div>
+              <div class="form-group">
+                <label>Instruksi Tugas</label>
+                <div id="sInstruction" class="card" style="padding: 14px; min-height: 72px;">Pilih tugas dari timeline untuk melihat instruksi.</div>
+              </div>
+              <div class="form-group">
+                <label>Lampiran Tugas</label>
+                <div id="sAttachment" class="muted">Tidak ada lampiran.</div>
+              </div>
+              <div class="form-group">
+                <label>Jawaban</label>
+                <textarea id="sAnswer"></textarea>
+              </div>
+              <div class="form-group">
+                <label>File Jawaban</label>
+                <input id="sFile" type="file" />
+              </div>
+              <div class="row" style="display: flex; gap: 10px;">
+                <button id="saveDraftBtn" class="btn btn-ghost" style="flex: 1;">Simpan Draft</button>
+                <button id="submitBtn" class="btn btn-primary" style="flex: 1;">Kirim</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="view-laporan" class="app-page hidden">
+          <div id="teacherLaporan" class="hidden">
+            <div class="card">
+              <h3>Assignment Tracker</h3>
+              <div style="overflow-x: auto;">
+                <table id="teacherAssignmentsTable"></table>
+              </div>
+            </div>
+            <div class="space"></div>
+            <div class="card hidden" id="trackerCard">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                <h3>Detail Pengumpulan: <span id="trackerTitle"></span></h3>
+                <div style="display: flex; gap: 10px; flex-grow: 1; justify-content: flex-end;">
+                  <input id="trackerSearchName" placeholder="Cari Nama..." style="max-width: 200px;" />
+                  <input id="trackerSearchClass" placeholder="Cari Kelas..." style="max-width: 150px;" />
+                </div>
+              </div>
+              <div style="overflow-x: auto;">
+                <table id="trackerTable"></table>
+              </div>
+            </div>
+          </div>
+
+          <div id="submissionModal" class="modal hidden">
+            <div class="modal-content card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3>Detail Jawaban: <span id="subStudentName"></span></h3>
+                <button class="btn btn-ghost btn-sm" onclick="el('submissionModal').classList.add('hidden')">✕</button>
+              </div>
+              <div class="form-group">
+                <label>Jawaban Teks</label>
+                <div id="subAnswerText" class="card" style="padding: 14px; min-height: 80px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color);"></div>
+              </div>
+              <div class="form-group">
+                <label>Lampiran Siswa</label>
+                <div id="subAnswerFile"></div>
+              </div>
+              <div style="margin-top: 20px;">
+                <button class="btn btn-primary" style="width: 100%;" onclick="el('submissionModal').classList.add('hidden')">Tutup</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="studentLaporan" class="hidden">
+            <div class="card">
+              <h3>Gradebook Personal</h3>
+              <div style="overflow-x: auto;">
+                <table id="gradebookTable"></table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="view-profil" class="app-page hidden">
+          <div class="card">
+            <h3>Profil</h3>
+            <div class="form-group">
+              <label>Nama</label>
+              <input id="pName" disabled />
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input id="pEmail" disabled />
+            </div>
+            <div class="form-group">
+              <label>Peran</label>
+              <input id="pRole" disabled />
+            </div>
+            <button id="logoutBtn" class="btn btn-primary" style="width: 100%;">Keluar</button>
+          </div>
+        </div>
+
+        <div id="view-admin" class="app-page hidden">
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <h3>Manajemen User</h3>
+              <button id="addUserBtn" class="btn btn-primary">+ User Baru</button>
+            </div>
+            <div style="overflow-x: auto;">
+              <table id="adminUsersTable"></table>
+            </div>
+          </div>
+
+          <div id="userModal" class="modal hidden">
+            <div class="modal-content card">
+              <h3 id="modalTitle">Tambah User</h3>
+              <div class="form-group">
+                <label>Nama</label>
+                <input id="mName" placeholder="Nama Lengkap" />
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input id="mEmail" placeholder="email@contoh.com" />
+              </div>
+              <div class="form-group">
+                <label>Role</label>
+                <select id="mRole">
+                  <option value="student">Murid</option>
+                  <option value="teacher">Guru</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Kelas (Wajib untuk Guru/Murid)</label>
+                <input id="mClassName" placeholder="Contoh: XI IPA 1" />
+              </div>
+              <div id="mTeacherFields" class="hidden">
+                <div class="form-group">
+                  <label>Mata Pelajaran (Wajib untuk Guru)</label>
+                  <input id="mSubject" placeholder="Contoh: Matematika" />
+                </div>
+              </div>
+              <div id="mStudentFields" class="hidden">
+                <div class="form-group">
+                  <label>Jurusan (Wajib untuk Murid)</label>
+                  <input id="mMajor" placeholder="Contoh: RPL" />
+                </div>
+              </div>
+              <div class="row" style="display: flex; gap: 10px; margin-top: 20px;">
+                <button id="cancelModalBtn" class="btn btn-ghost" style="flex: 1;">Batal</button>
+                <button id="saveUserBtn" class="btn btn-primary" style="flex: 1;">Simpan</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="profileSetupView" class="hidden" style="max-width: 760px; margin: 0 auto;">
+        <div class="card">
+          <h3>Lengkapi Profil</h3>
+          <p id="profileSetupDesc" class="muted"></p>
+          <div class="form-group">
+            <label>Nama Lengkap</label>
+            <input id="psName" />
+          </div>
+          <div id="profileTeacherFields" class="hidden">
+            <div class="form-group">
+              <label>Mapel yang Diampu</label>
+              <input id="psSubject" placeholder="Contoh: Matematika" />
+            </div>
+            <div class="form-group">
+              <label>Kelas yang Diampu</label>
+              <input id="psClassTeacher" placeholder="Contoh: XI IPA 1" />
+            </div>
+          </div>
+          <div id="profileStudentFields" class="hidden">
+            <div class="form-group">
+              <label>Jurusan</label>
+              <input id="psMajor" placeholder="Contoh: Rekayasa Perangkat Lunak" />
+            </div>
+            <div class="form-group">
+              <label>Kelas</label>
+              <input id="psClassStudent" placeholder="Contoh: XI RPL 2" />
+            </div>
+          </div>
+          <button id="saveProfileBtn" class="btn btn-primary">Simpan Profil</button>
+        </div>
+      </section>
+
+
+      <footer id="siteFooter" style="text-align: center; padding: 40px 0; border-top: 1px solid var(--border-color);">
+        <p class="muted" style="font-size: 12px;">&copy; 2026 RuangTugas. All rights reserved.</p>
+      </footer>
+
+      <div id="bottomNav" class="bottom-nav hidden">
+        <div class="bottom-nav-item active" data-view="dashboard" title="Dashboard">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          <div class="indicator"></div>
+        </div>
+        <div class="bottom-nav-item" data-view="tugas" title="Tugas">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+          <div class="indicator"></div>
+        </div>
+        <div class="bottom-nav-item" data-view="laporan" title="Laporan">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          <div class="indicator"></div>
+        </div>
+        <div id="adminBottomNavItem" class="bottom-nav-item hidden" data-view="admin" title="Admin">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          <div class="indicator"></div>
+        </div>
+        <div class="bottom-nav-item" data-view="profil" title="Profil">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          <div class="indicator"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="/main.js"></script>
+  </body>
+</html>
