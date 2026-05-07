@@ -10,6 +10,36 @@ const state = {
 };
 
 const el = (id) => document.getElementById(id);
+
+const CLASS_LIST = [
+  "X DPIB", "X DTF", "X TKR A", "X TKR B", "X RPL", "X TKJ A", "X TKJ B", "X DKV A", "X DKV B", "X KKKR", "X AKL A", "X AKL B", "X BD A", "X BD B", "X PSPT",
+  "XI DPIB", "XI DTF", "XI TKR A", "XI TKR B", "XI RPL", "XI TKJ A", "XI TKJ B", "XI DKV A", "XI DKV B", "XI KKKR", "XI AKL A", "XI AKL B", "XI BD A", "XI BD B", "XI PSPT"
+];
+
+function initClassSelectors() {
+  const selects = ["aTargetClass", "adminSearchClass", "mClassName", "psClassStudent"];
+  selects.forEach(id => {
+    const select = el(id);
+    if (!select) return;
+    CLASS_LIST.forEach(cls => {
+      const opt = document.createElement("option");
+      opt.value = cls;
+      opt.textContent = cls;
+      select.appendChild(opt);
+    });
+  });
+
+  const teacherContainer = el("psClassTeacherContainer");
+  if (teacherContainer) {
+    CLASS_LIST.forEach(cls => {
+      const label = document.createElement("label");
+      label.className = "checkbox-item";
+      label.innerHTML = `<input type="checkbox" name="teacherClass" value="${cls}"> <span>${cls}</span>`;
+      teacherContainer.appendChild(label);
+    });
+  }
+}
+
 const fmt = (value) => (value ? new Date(value).toLocaleString("id-ID") : "-");
 const isTeacher = () => state.user?.role === "teacher" || state.user?.role === "admin";
 
@@ -130,10 +160,19 @@ function showProfileSetup(user) {
   el("psName").value = user.name || "";
 
   const teacher = isTeacher();
+  if (teacher) {
+    const selectedClasses = (user.className || "").split(",");
+    document.querySelectorAll('input[name="teacherClass"]').forEach(cb => {
+      cb.checked = selectedClasses.includes(cb.value);
+    });
+  } else {
+    el("psClassStudent").value = user.className || "";
+  }
+
   el("profileTeacherFields").classList.toggle("hidden", !teacher);
   el("profileStudentFields").classList.toggle("hidden", teacher);
   el("profileSetupDesc").textContent = teacher
-    ? "Isi profil guru: nama lengkap, mapel yang diampu, dan kelas yang diampu."
+    ? "Isi profil guru: nama lengkap, mapel yang diampu, dan pilih kelas yang diampu."
     : "Isi profil murid: nama lengkap, jurusan, dan kelas.";
 }
 
@@ -606,7 +645,14 @@ el("saveProfileBtn").addEventListener("click", async () => {
   try {
     if (!state.user) throw new Error("Sesi login tidak ditemukan.");
     const teacher = isTeacher();
-    const className = teacher ? el("psClassTeacher").value.trim() : el("psClassStudent").value.trim();
+    let className = "";
+    if (teacher) {
+      className = Array.from(document.querySelectorAll('input[name="teacherClass"]:checked'))
+        .map(cb => cb.value)
+        .join(",");
+    } else {
+      className = el("psClassStudent").value.trim();
+    }
     const payload = {
       name: el("psName").value.trim(),
       subject: teacher ? el("psSubject").value.trim() : undefined,
@@ -678,4 +724,5 @@ if (savedUser) {
 } else {
   showAuth();
 }
+initClassSelectors();
 initGoogleSignIn();

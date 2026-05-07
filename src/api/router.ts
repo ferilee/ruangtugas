@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, or, sql } from "drizzle-orm";
 import { OAuth2Client } from "google-auth-library";
 import { z } from "zod";
 
@@ -318,9 +318,14 @@ api.get("/assignments", async (c) => {
   }
 
   if (role === "student") {
-    const studentAssignments = await db
+    const studentResult = await db.select({ className: users.className }).from(users).where(eq(users.id, userId)).limit(1);
+    if (!studentResult[0]) return c.json({ message: "User tidak ditemukan" }, 404);
+    const studentClass = studentResult[0].className || "";
+
+    const filtered = await db
       .select({
         id: assignments.id,
+        submissionId: submissions.id,
         title: assignments.title,
         description: assignments.description,
         deadline: assignments.deadline,
@@ -328,25 +333,23 @@ api.get("/assignments", async (c) => {
         linkUrl: assignments.linkUrl,
         teacherName: users.name,
         submissionStatus: submissions.status,
-        score: submissions.score
+        score: submissions.score,
+        submittedAt: submissions.submittedAt
       })
       .from(assignments)
       .innerJoin(users, eq(users.id, assignments.teacherId))
       .leftJoin(
         submissions,
         and(eq(submissions.assignmentId, assignments.id), eq(submissions.studentId, userId))
-      );
-
-    const student = await db.select({ className: users.className }).from(users).where(eq(users.id, userId)).limit(1);
-    const studentClass = student[0]?.className || "";
-
-    const filtered = await studentAssignments.where(
-      or(
-        isNull(assignments.targetClass),
-        eq(assignments.targetClass, ""),
-        eq(assignments.targetClass, studentClass)
       )
-    ).orderBy(asc(assignments.deadline));
+      .where(
+        or(
+          isNull(assignments.targetClass),
+          eq(assignments.targetClass, ""),
+          eq(assignments.targetClass, studentClass)
+        )
+      )
+      .orderBy(asc(assignments.deadline));
 
     return c.json(filtered);
   }
@@ -420,7 +423,8 @@ api.get("/student/:studentId/submissions", async (c) => {
       score: submissions.score,
       feedback: submissions.feedback,
       answerText: submissions.answerText,
-      answerFileUrl: submissions.answerFileUrl
+      answerFileUrl: submissions.answerFileUrl,
+      submittedAt: submissions.submittedAt
     })
     .from(submissions)
     .innerJoin(assignments, eq(assignments.id, submissions.assignmentId))

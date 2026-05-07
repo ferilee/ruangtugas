@@ -111,8 +111,10 @@
                   <textarea id="aDescription" placeholder="Jelaskan instruksi tugas..."></textarea>
                 </div>
                 <div class="form-group">
-                  <label>Target Kelas (Kosongkan jika untuk semua)</label>
-                  <input id="aTargetClass" placeholder="Contoh: X RPL 1" />
+                  <label>Target Kelas (Pilih jika ada target spesifik)</label>
+                  <select id="aTargetClass">
+                    <option value="">Semua Kelas</option>
+                  </select>
                 </div>
                 <div class="form-group">
                   <label>Lampiran File</label>
@@ -265,7 +267,9 @@
                   <option value="student">Murid</option>
                   <option value="admin">Admin</option>
                 </select>
-                <input id="adminSearchClass" placeholder="Cari Kelas..." style="max-width: 150px;" />
+                <select id="adminSearchClass" style="max-width: 150px;">
+                  <option value="">Semua Kelas</option>
+                </select>
                 <button id="addUserBtn" class="btn btn-primary">+ User Baru</button>
               </div>
             </div>
@@ -295,7 +299,9 @@
               </div>
               <div class="form-group">
                 <label>Kelas (Wajib untuk Guru/Murid)</label>
-                <input id="mClassName" placeholder="Contoh: XI IPA 1" />
+                <select id="mClassName">
+                  <option value="">Pilih Kelas...</option>
+                </select>
               </div>
               <div id="mTeacherFields" class="hidden">
                 <div class="form-group">
@@ -332,8 +338,10 @@
               <input id="psSubject" placeholder="Contoh: Matematika" />
             </div>
             <div class="form-group">
-              <label>Kelas yang Diampu</label>
-              <input id="psClassTeacher" placeholder="Contoh: XI IPA 1" />
+              <label>Kelas yang Diampu (Bisa pilih lebih dari satu)</label>
+              <div id="psClassTeacherContainer" class="checkbox-group-container">
+                <!-- Populated via JS -->
+              </div>
             </div>
           </div>
           <div id="profileStudentFields" class="hidden">
@@ -343,7 +351,9 @@
             </div>
             <div class="form-group">
               <label>Kelas</label>
-              <input id="psClassStudent" placeholder="Contoh: XI RPL 2" />
+              <select id="psClassStudent">
+                <option value="">Pilih Kelas...</option>
+              </select>
             </div>
           </div>
           <button id="saveProfileBtn" class="btn btn-primary">Simpan Profil</button>
