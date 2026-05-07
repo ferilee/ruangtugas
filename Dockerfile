@@ -1,5 +1,5 @@
-# Use the official Bun image
-FROM oven/bun:1.2-slim AS base
+# Use Bun version aligned with the lockfile generated in this repo
+FROM oven/bun:1.3-slim AS base
 WORKDIR /app
 
 # Install dependencies
