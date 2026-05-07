@@ -14,7 +14,7 @@ node_modules/
 *.db-wal
 
 # Bun
-bun.lock
+# bun.lock
 
 # Build / IDE
 dist/
