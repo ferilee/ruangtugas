@@ -31,6 +31,8 @@ const CLASS_LIST = [
   "XI DPIB", "XI DTF", "XI TKR A", "XI TKR B", "XI RPL", "XI TKJ A", "XI TKJ B", "XI DKV A", "XI DKV B", "XI KKKR", "XI AKL A", "XI AKL B", "XI BD A", "XI BD B", "XI PSPT"
 ];
 
+const MAJOR_LIST = ["DPIB", "DTF", "TKR", "RPL", "TKJ", "DKV", "KKKR", "AK", "BD", "PSPT"];
+
 function initClassSelectors() {
   const selects = ["aTargetClass", "adminSearchClass", "mClassName", "psClassStudent"];
   selects.forEach(id => {
@@ -40,6 +42,18 @@ function initClassSelectors() {
       const opt = document.createElement("option");
       opt.value = cls;
       opt.textContent = cls;
+      select.appendChild(opt);
+    });
+  });
+
+  const majorSelects = ["psMajor", "mMajor"];
+  majorSelects.forEach(id => {
+    const select = el(id);
+    if (!select) return;
+    MAJOR_LIST.forEach(mj => {
+      const opt = document.createElement("option");
+      opt.value = mj;
+      opt.textContent = mj;
       select.appendChild(opt);
     });
   });
