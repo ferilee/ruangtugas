@@ -1,6 +1,7 @@
 const state = {
   user: null,
   selectedSubmissionId: null,
+  selectedAssignmentId: null,
   currentView: "dashboard",
   teacherAssignments: [],
   studentAssignments: [],
@@ -10,6 +11,20 @@ const state = {
 };
 
 const el = (id) => document.getElementById(id);
+
+function notify(message, type = "info") {
+  const container = el("notificationContainer");
+  if (!container) return;
+  const n = document.createElement("div");
+  n.className = `notification ${type}`;
+  const icon = type === "success" ? "✅" : type === "error" ? "❌" : "ℹ️";
+  n.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+  container.appendChild(n);
+  setTimeout(() => {
+    n.classList.add("hiding");
+    setTimeout(() => n.remove(), 300);
+  }, 4000);
+}
 
 const CLASS_LIST = [
   "X DPIB", "X DTF", "X TKR A", "X TKR B", "X RPL", "X TKJ A", "X TKJ B", "X DKV A", "X DKV B", "X KKKR", "X AKL A", "X AKL B", "X BD A", "X BD B", "X PSPT",
@@ -190,7 +205,7 @@ async function onGoogleCredential(response) {
     }
     showApp(data.user);
   } catch (e) {
-    alert(e.message);
+    notify(e.message, "error");
   }
 }
 
@@ -345,7 +360,7 @@ window.gradeSubmission = async (submissionId, currentScore, currentFeedback) => 
     body: JSON.stringify({ score: Number(score), feedback })
   });
   await refreshRoleData();
-  alert("Penilaian tersimpan.");
+  notify("Penilaian tersimpan.", "success");
 };
 
 async function loadStudentData() {
@@ -416,6 +431,7 @@ function renderStudentAssignmentsTable() {
 
 window.selectSubmission = (submissionId, assignmentId) => {
   state.selectedSubmissionId = submissionId;
+  state.selectedAssignmentId = assignmentId;
   const assignment = state.studentAssignments.find((a) => a.id === assignmentId);
   const submission = state.studentSubmissions.find((s) => s.assignmentId === assignmentId);
 
@@ -567,9 +583,9 @@ el("saveUserBtn").addEventListener("click", async () => {
     }
     el("userModal").classList.add("hidden");
     await loadAdminData();
-    alert("User berhasil disimpan.");
+    notify("User berhasil disimpan.", "success");
   } catch (e) {
-    alert(e.message);
+    notify(e.message, "error");
   }
 });
 
@@ -578,9 +594,9 @@ window.deleteUser = async (id) => {
   try {
     await api(`/users/${id}`, { method: "DELETE" });
     await loadAdminData();
-    alert("User berhasil dihapus.");
+    notify("User berhasil dihapus.", "success");
   } catch (e) {
-    alert(e.message);
+    notify(e.message, "error");
   }
 };
 
@@ -609,15 +625,29 @@ el("createAssignmentBtn").addEventListener("click", async () => {
     el("aFile").value = "";
     el("aLink").value = "";
     await refreshRoleData();
-    alert("Tugas berhasil dibuat.");
+    notify("Tugas berhasil dibuat.", "success");
   } catch (e) {
-    alert(e.message);
+    notify(e.message, "error");
   }
 });
 
 async function saveSubmission(status) {
   try {
-    if (!state.selectedSubmissionId) throw new Error("Pilih tugas dulu dari timeline.");
+    if (!state.selectedAssignmentId) throw new Error("Pilih tugas dulu dari timeline.");
+    
+    // Create submission if it doesn't exist yet
+    if (!state.selectedSubmissionId) {
+      const init = await api("/submissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assignmentId: state.selectedAssignmentId,
+          studentId: state.user.id
+        })
+      });
+      state.selectedSubmissionId = init.submission.id;
+    }
+
     const answerFileUrl = await uploadFile(el("sFile").files[0]);
     await api(`/submissions/${state.selectedSubmissionId}`, {
       method: "PATCH",
@@ -632,9 +662,9 @@ async function saveSubmission(status) {
     el("sFile").value = "";
     el("sAnswerLink").value = "";
     await refreshRoleData();
-    alert(status === "draft" ? "Draft tersimpan." : "Jawaban terkirim.");
+    notify(status === "draft" ? "Draft tersimpan." : "Jawaban terkirim.", "success");
   } catch (e) {
-    alert(e.message);
+    notify(e.message, "error");
   }
 }
 
@@ -666,7 +696,7 @@ el("saveProfileBtn").addEventListener("click", async () => {
     });
     showApp(data.user);
   } catch (e) {
-    alert(e.message);
+    notify(e.message, "error");
   }
 });
 

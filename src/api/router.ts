@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { and, asc, desc, eq, isNull, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { OAuth2Client } from "google-auth-library";
 import { z } from "zod";
 
@@ -279,17 +279,40 @@ api.patch("/users/:id", async (c) => {
 api.delete("/users/:id", async (c) => {
   const id = Number(c.req.param("id"));
   
-  // Optional: check if user has submissions or assignments
-  const userSubmissions = await db.select().from(submissions).where(eq(submissions.studentId, id)).limit(1);
-  const userAssignments = await db.select().from(assignments).where(eq(assignments.teacherId, id)).limit(1);
-  
-  if (userSubmissions.length > 0 || userAssignments.length > 0) {
-    return c.json({ message: "User tidak bisa dihapus karena memiliki data terkait (tugas/pengumpulan)." }, 400);
-  }
+  try {
+    const userResult = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    const user = userResult[0];
+    if (!user) return c.json({ message: "User tidak ditemukan" }, 404);
 
-  const [deleted] = await db.delete(users).where(eq(users.id, id)).returning();
-  if (!deleted) return c.json({ message: "User tidak ditemukan" }, 404);
-  return c.json({ message: "User berhasil dihapus" });
+    await db.transaction(async (tx) => {
+      if (user.role === "student") {
+        // Delete all submissions by this student
+        await tx.delete(submissions).where(eq(submissions.studentId, id));
+      } else {
+        // Teacher or Admin: they might have assignments
+        const teacherAssignments = await tx
+          .select({ id: assignments.id })
+          .from(assignments)
+          .where(eq(assignments.teacherId, id));
+        
+        const assignmentIds = teacherAssignments.map(a => a.id);
+        
+        if (assignmentIds.length > 0) {
+          // Delete all submissions for these assignments
+          await tx.delete(submissions).where(inArray(submissions.assignmentId, assignmentIds));
+          // Delete the assignments themselves
+          await tx.delete(assignments).where(inArray(assignments.id, assignmentIds));
+        }
+      }
+
+      // Finally delete the user
+      await tx.delete(users).where(eq(users.id, id));
+    });
+
+    return c.json({ message: "User dan semua data terkait berhasil dihapus." });
+  } catch (e: any) {
+    return c.json({ message: "Gagal menghapus user: " + e.message }, 500);
+  }
 });
 
 api.get("/assignments", async (c) => {
