@@ -6,6 +6,40 @@ import { z } from "zod";
 import { db } from "@/db";
 import { assignments, submissions, users } from "@/db/schema";
 
+const STUDENT_MAJORS = ["DPIB", "DTF", "TKR", "RPL", "TKJ", "DKV", "KKKR", "AKL", "BD", "PSPT"] as const;
+const STUDENT_CLASSES = [
+  "X DPIB",
+  "X DTF",
+  "X TKR A",
+  "X TKR B",
+  "X RPL",
+  "X TKJ A",
+  "X TKJ B",
+  "X DKV A",
+  "X DKV B",
+  "X KKKR",
+  "X AKL A",
+  "X AKL B",
+  "X BD A",
+  "X BD B",
+  "X PSPT",
+  "XI DPIB",
+  "XI DTF",
+  "XI TKR A",
+  "XI TKR B",
+  "XI RPL",
+  "XI TKJ A",
+  "XI TKJ B",
+  "XI DKV A",
+  "XI DKV B",
+  "XI KKKR",
+  "XI AKL A",
+  "XI AKL B",
+  "XI BD A",
+  "XI BD B",
+  "XI PSPT"
+] as const;
+
 const createAssignmentSchema = z.object({
   teacherId: z.number().int(),
   title: z.string().min(3),
@@ -36,7 +70,7 @@ const googleLoginSchema = z.object({
 const updateProfileSchema = z.object({
   name: z.string().min(3),
   subject: z.string().optional(),
-  major: z.string().optional(),
+  major: z.enum(STUDENT_MAJORS).optional(),
   className: z.string().min(1)
 });
 
@@ -207,8 +241,13 @@ api.patch("/users/:id/profile", async (c) => {
   if ((role === "teacher" || role === "admin") && !parsed.data.subject) {
     return c.json({ message: "Guru wajib mengisi mapel yang diampu." }, 400);
   }
-  if (role === "student" && !parsed.data.major) {
-    return c.json({ message: "Murid wajib mengisi jurusan." }, 400);
+  if (role === "student") {
+    if (!parsed.data.major) {
+      return c.json({ message: "Murid wajib mengisi jurusan." }, 400);
+    }
+    if (!STUDENT_CLASSES.includes(parsed.data.className as (typeof STUDENT_CLASSES)[number])) {
+      return c.json({ message: "Kelas murid tidak valid." }, 400);
+    }
   }
 
   const [updated] = await db
